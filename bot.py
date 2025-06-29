@@ -140,16 +140,20 @@ async def post_init(app):
 
 # Main function
 def main() -> None:
-    app = ApplicationBuilder().token(TOKEN).post_init(post_init).build()
+    # Create Application with Job Queue
+    application = Application.builder().token(TOKEN).build()
 
-    # Handlers
-    app.add_handler(CommandHandler('start', start))
-    app.add_handler(CallbackQueryHandler(button_handler))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-    app.add_error_handler(error_handler)
+    # Add handlers
+    application.add_handler(CommandHandler('start', start))
+    application.add_handler(CallbackQueryHandler(button_handler))
+    application.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
 
-    logger.info("Bot is running...")
-    app.run_polling()
+    # Schedule daily tips (9:00 AM UTC)
+    job_queue = application.job_queue
+    job_queue.run_daily(scheduled_tips, time=time(hour=9, minute=0))
+
+    # Start the Bot
+    application.run_polling()
 
 if __name__ == '__main__':
     main()
